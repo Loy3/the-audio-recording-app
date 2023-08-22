@@ -160,16 +160,26 @@ export default function App() {
     })
   }
 
+   function displayTitle() {
+    console.log(recordingTitle);
+  }
+
   return (
     <View style={styles.container}>
-      <Image source={recordStatus} style={styles.recorder} />
+
       <TextInput style={styles.formInput}
-        onChange={(ev) => setRecordingTitle(ev.target.value)} placeholder="Journal title:" />
+        onChangeText={text => setRecordingTitle(text)}
+        value={recordingTitle} placeholder="Journal title:" />
+      <TouchableOpacity onPress={displayTitle}>
+        <Text>Save title</Text>
+        {/* <Image source={recordStatus} style={styles.recorder} /> */}
+      </TouchableOpacity>
       <Text>{message}</Text>
       <Text>{count}</Text>
 
       <TouchableOpacity onPress={recording ? stopRecording : startRecording}>
-        <Text>{recording ? "Stop Recording" : "Start Recording"}</Text>
+        {/* <Text>{ ? "Stop Recording" : "Start Recording"}</Text> */}
+        <Image source={recordStatus} style={styles.recorder} />
       </TouchableOpacity>
       {getRecordingLines()}
 
@@ -202,10 +212,10 @@ const styles = StyleSheet.create({
   btn: {
     margin: 16
   },
-  recorder:{
+  recorder: {
     width: 100,
     height: 100,
-    objectFit:"cover",
+    objectFit: "cover",
     marginVertical: 30
   },
 });
