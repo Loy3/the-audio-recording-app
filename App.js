@@ -1,11 +1,12 @@
 import { StatusBar } from 'expo-status-bar';
 // import React from 'react';
-import { StyleSheet, Text, View, Button, TouchableOpacity, TextInput } from 'react-native';
+import { StyleSheet, Text, View, Button, TouchableOpacity, TextInput, Image } from 'react-native';
 import { Audio, RecordingOptionsPresets } from "expo-av";
 // import { AudioRecorderPlayer, AudioPlayer } from 'react-native-audio-recorder-player';
 import React, { useState, useEffect, useRef } from 'react';
 
-
+import recordOn from "./assets/recorder.png";
+import recordOff from "./assets/recorderOff.png";
 
 // import { Audio } from 'expo-av';
 
@@ -77,6 +78,8 @@ export default function App() {
   const [isCounting, setIsCounting] = useState(false);
   const intervalRef = useRef(null);
 
+  const [recordStatus, setRecordStatus] = useState(recordOff);
+
   useEffect(() => {
     console.log("ine 77", recordingTitle);
   }, [recordingTitle])
@@ -101,6 +104,8 @@ export default function App() {
         intervalRef.current = setInterval(() => {
           setCount((prevCount) => prevCount + 1);
         }, 1000);
+
+        setRecordStatus(recordOn);
       } else {
         setMessage("Please grant permission to app to access microphone.")
       }
@@ -127,6 +132,7 @@ export default function App() {
     setIsCounting(false);
     clearInterval(intervalRef.current);
     setCount(0)
+    setRecordStatus(recordOff);
     // setRecordingTitle("")
   }
 
@@ -156,7 +162,7 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-
+      <Image source={recordStatus} style={styles.recorder} />
       <TextInput style={styles.formInput}
         onChange={(ev) => setRecordingTitle(ev.target.value)} placeholder="Journal title:" />
       <Text>{message}</Text>
@@ -195,7 +201,13 @@ const styles = StyleSheet.create({
   },
   btn: {
     margin: 16
-  }
+  },
+  recorder:{
+    width: 100,
+    height: 100,
+    objectFit:"cover",
+    marginVertical: 30
+  },
 });
 
 /*
