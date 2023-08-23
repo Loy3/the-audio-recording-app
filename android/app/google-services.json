@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1050057300344",
+    "project_id": "theoneaboutloy",
+    "storage_bucket": "theoneaboutloy.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1050057300344:android:19f5db2ffc1e437185908d",
+        "android_client_info": {
+          "package_name": "the.audio.recording.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1050057300344-rraq2oc7hgdilti5rdjr718laiv5jkoc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzWBFbZI5GhTJFL6WNSq-b_fHyZfhEpag"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1050057300344-rraq2oc7hgdilti5rdjr718laiv5jkoc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
