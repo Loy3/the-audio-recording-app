@@ -10,9 +10,16 @@ import { Updates } from 'expo-updates';
 import recordOn from "./assets/recorder.png";
 import recordOff from "./assets/recorderOff.png";
 
+import stopAud from "./assets/stop.png";
+import playAud from "./assets/play.png";
+
+import audMenu from "./assets/dots.png";
+import audEdit from "./assets/edit.png";
+import audDelete from "./assets/delete.png";
+
 import firebase from 'firebase/app';
 import { storage, db } from './components/fbConfig';
-import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
 // import { Audio } from 'expo-av';
@@ -23,63 +30,6 @@ import * as FileSystem from 'expo-file-system';
 
 export default function App() {
 
-  // const [recording, setRecording] = useState(null);
-  // const [isRecording, setIsRecording] = useState(false);
-  // const [sound, setSound] = useState(null);
-  // const [isPlaying, setIsPlaying] = useState(false);
-
-  // const startRecording = async () => {
-  //   try {
-  //     const recording = new Audio.Recording();
-  //     await recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
-  //     await recording.startAsync();
-  //     setRecording(recording);
-  //     setIsRecording(true);
-  //   } catch (error) { 
-  //     console.error(error);
-  //   }
-  // };
-
-  // const stopRecording = async () => {
-  //   try {
-  //     await recording.stopAndUnloadAsync();
-  //     setIsRecording(false);
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // };
-
-  // const playAudio = async () => {
-  //   try {
-  //     const { sound } = await Audio.Sound.createAsync({ uri: recording.getURI() });
-  //     setSound(sound);
-  //     await sound.playAsync();
-  //     setIsPlaying(true);
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // };
-
-  // const stopAudio = async () => {
-  //   try {
-  //     await sound.unloadAsync();
-  //     setIsPlaying(false);
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   return sound
-  //     ? () => {
-  //         sound.unloadAsync();
-  //       }
-  //     : undefined;
-  // }, [sound]);
-
-
-
-
   const [recording, setRecording] = useState();
   const [recordings, setRecordings] = useState([]);
   const [message, setMessage] = useState("");
@@ -87,6 +37,7 @@ export default function App() {
   const [journals, setJournals] = useState([]);
   const [count, setCount] = useState(0);
   const [isCounting, setIsCounting] = useState(false);
+  const [countMin, setCountMin] = useState(0);
   const intervalRef = useRef(null);
 
   const [recordStatus, setRecordStatus] = useState(recordOff);
@@ -94,19 +45,28 @@ export default function App() {
   //Get data 
 
   const fetchData = (async () => {
+
+    let documents = [];
     const collectionRef = collection(db, 'journals');
-    const data = await getDocs(collectionRef);
-    const documents = data.docs.map((doc) => {
-      return { id: doc.id, ...doc.data() };
+    onSnapshot(collectionRef, (snapshot) => {
+
+      const fetchedDocuments = [];
+      snapshot.forEach((doc) => {
+        fetchedDocuments.push({ id: doc.id, ...doc.data() });
+      });
+      setJournals(fetchedDocuments);
+
     });
-    setJournals(documents);
-    console.log(documents);
+
   })
 
   useEffect(() => {
-    // console.log(recordingTitle);
-    // fetchData();
+    fetchData();
   }, [])
+
+  useEffect(() => {
+    // console.log(journals);
+  }, [journals])
 
   async function startRecording() {
     const permission = await Audio.requestPermissionsAsync();
@@ -124,9 +84,15 @@ export default function App() {
         );
         setRecording(recording);
 
+        let minCount = 0;
         setIsCounting(true);
         intervalRef.current = setInterval(() => {
           setCount((prevCount) => prevCount + 1);
+          minCount = (prevCount) => prevCount + 1;
+          if (minCount >= 60) {
+            setCountMin((prevCountMin) => prevCountMin + 1);
+          }
+
         }, 1000);
 
         setRecordStatus(recordOn);
@@ -169,20 +135,24 @@ export default function App() {
     return `${minutesDisplay2}:${secondsDisplay}`
   }
 
-
-  function getRecordingLines() {
-    return recordings.map((recordingLine, index) => {
-      return (
-        <View key={index} style={styles.row}>
-          <Text style={styles.fill}>{recordingLine.title} {index + 1} - {recordingLine.duration}</Text>
-
-          <TouchableOpacity style={styles.btn} onPress={() => recordingLine.sound.replayAsync()}>
-            <Text>Play</Text>
-          </TouchableOpacity>
-        </View>
-      );
-    })
+  const [menuTitle, setMenuTitle] = useState("Title");
+  const [menuStatus, setMenuStatus] = useState(false);
+  function handleMenu(event, title, type) {
+    switch (type) {
+      case "show":
+        setMenuStatus(true);
+        setMenuTitle(title);
+        break;
+      case "hide":
+        setMenuStatus(false);
+        setMenuTitle("Title");
+        break;
+      default:
+    }
   }
+
+
+
 
   function displayTitle() {
     console.log(recordingTitle);
@@ -190,7 +160,7 @@ export default function App() {
 
   async function storeJournal() {
     console.log("Tesing", recordingTitle);
-    console.log(recordings[0].title);
+    console.log(recordings[0].sound);
 
 
 
@@ -199,27 +169,27 @@ export default function App() {
       const journal = `${recordings[0].title}${new Date().getTime()}`;
       const path = `audio/${journal}`;
       // const blob = await recordings[0].ogSound;
-      const convertRecord = convertToMp3(recordings[0].file);
+      const convertRecord = recordings[0].sound;
       console.log(convertRecord);
-      // const storageRef = ref(storage, path);
-      // uploadBytes(storageRef, convertRecord).then(() => {
-      //   // Get download URL
-      //   getDownloadURL(storageRef)
-      //     .then(async (url) => {
-      //       // Save data to Firestore           
-      //       await addDoc(collection(db, "journals"), {
-      //         title: audioTitle,
-      //         audioName: journal,
-      //         audioUrl: url
-      //       });
-      //     })
-      //     .catch((error) => {
-      //       console.error(error);
-      //     }).then(async () => {
-      //       setRecordings([]);
-      //       console.log("Success");
-      //     })
-      // });
+      const storageRef = ref(storage, path);
+      uploadBytes(storageRef, convertRecord).then(() => {
+        // Get download URL
+        getDownloadURL(storageRef)
+          .then(async (url) => {
+            // Save data to Firestore           
+            await addDoc(collection(db, "journals"), {
+              title: audioTitle,
+              audioName: journal,
+              audioUrl: url
+            });
+          })
+          .catch((error) => {
+            console.error(error);
+          }).then(async () => {
+            setRecordings([]);
+            console.log("Success");
+          })
+      });
 
     } catch (error) {
       console.log(error)
@@ -249,24 +219,41 @@ export default function App() {
   }
 
 
-  async function convertToMp3(uri) {
-    // const fileInfo = await FileSystem.getInfoAsync(uri);
-    // const lastFour = uri.substr(uri.length - 4);
-    // const convertedUri = uri.replace(lastFour, '.mp3');
-    // console.log(lastFour);
-    // await FileSystem.copyAsync({
-    //   from: uri,
-    //   to: convertedUri,
-    // });
-    // console.log(convertedUri);
+  async function convertToMp3(sound) {
+    // // const fileInfo = await FileSystem.getInfoAsync(uri);
+    // // const lastFour = uri.substr(uri.length - 4);
+    // // const convertedUri = uri.replace(lastFour, '.mp3');
+    // // console.log(lastFour);
+    // // await FileSystem.copyAsync({
+    // //   from: uri,
+    // //   to: convertedUri,
+    // // });
+    // // console.log(convertedUri);
 
-    const localUri = await FileSystem.downloadAsync(uri, FileSystem.documentDirectory + 'audio.mp3');
+    // const localUri = await FileSystem.downloadAsync(uri, FileSystem.documentDirectory + 'audio.mp3');
 
-    // Upload the file to Firebase Storage
-    const response = await fetch(localUri);
-    const blob = await response.blob();
-    return blob;
-    // return convertedUri;
+    // // Upload the file to Firebase Storage
+    // const response = await fetch(localUri);
+    // const blob = await response.blob();
+    // return blob;
+    // // return convertedUri;
+
+    try {
+      console.log(sound);
+      const exportOptions = {
+        outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4, // or Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_MP4
+        audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_MEDIUM // or Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC
+      };
+
+      const exportedFile = await sound.exportAsync(exportOptions);
+      const uri = exportedFile.uri;
+      console.log(uri);
+
+      return uri;
+
+    } catch (error) {
+      console.log(error);
+    }
 
   }
 
@@ -278,6 +265,8 @@ export default function App() {
       deleteAudio(data.audioName).then(async () => {
         await deleteDoc(doc(db, "journals", data.id));
         console.log("Document successfully deleted!");
+        setMenuStatus(false);
+        setMenuTitle("Title");
       }).catch((error) => {
         console.log(error);
       });
@@ -292,11 +281,8 @@ export default function App() {
     const path = `audio/${audio}`;
     const fileRef = ref(storage, path);
     // Delete the file
-    // Delete the file
     deleteObject(fileRef).then(() => {
-      // File deleted successfully
     }).catch((error) => {
-      // Uh-oh, an error occurred!
       console.log(error);
     });
   }
@@ -324,7 +310,8 @@ export default function App() {
     try {
       await updateDoc(storageRef, updateData);
       console.log('Updated');
-
+      setMenuStatus(false);
+      setMenuTitle("Title");
     } catch (error) {
       console.log('Failed to Update');
     }
@@ -332,39 +319,111 @@ export default function App() {
 
 
 
+  function getRecordingLines() {
+    return recordings.map((recordingLine, index) => {
+      return (
+        <View key={index}>
+          <View style={styles.row}>
+            <Text style={styles.fill}>{recordingLine.title}</Text>
+            <Text style={styles.fillD}>{recordingLine.duration}</Text>
+            <TouchableOpacity style={styles.btn1} onPress={() => recordingLine.sound.replayAsync()}>
+              <Image source={playAud} style={styles.playAud} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.btn2} onPress={() => recordingLine.sound.stopAsync()}>
+              <Image source={stopAud} style={styles.stopAud} />
+            </TouchableOpacity>
+          </View>
 
+          <TouchableOpacity onPress={storeJournal} style={styles.saveBTN}>
+            <Text style={styles.saveBTNTxt}>Save</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    })
+  }
 
   return (
     <View style={styles.container}>
-      {/* <ScrollView scrollEnabled={true} style={{ width: 350, flex:1 }}> */}
-      <TextInput style={styles.formInput}
-        onChangeText={text => setRecordingTitle(text)}
-        value={recordingTitle} placeholder="Journal title:" />
-      <TouchableOpacity onPress={displayTitle}>
+      <ScrollView scrollEnabled={true} >
+
+        <View style={styles.titleInput}>
+          <TextInput style={styles.formInput}
+            onChangeText={text => setRecordingTitle(text)}
+            value={recordingTitle} placeholder="Add Journal Title:" />
+        </View>
+        {/* <TouchableOpacity onPress={displayTitle}>
         <Text>Save title</Text>
-        {/* <Image source={recordStatus} style={styles.recorder} /> */}
-      </TouchableOpacity>
-      <Text>{message}</Text>
-      <Text>{count}</Text>
+        {/* <Image source={recordStatus} style={styles.recorder} /> /}
+      </TouchableOpacity> */}
+        <Text>{message}</Text>
 
-      <TouchableOpacity onPress={recording ? stopRecording : startRecording}>
-        {/* <Text>{ ? "Stop Recording" : "Start Recording"}</Text> */}
-        <Image source={recordStatus} style={styles.recorder} />
-      </TouchableOpacity>
 
-      {getRecordingLines()}
-      <TouchableOpacity onPress={storeJournal}>
-        <Text>Save</Text>
-        {/* <Image source={recordStatus} style={styles.recorder} /> */}
-      </TouchableOpacity>
-      {/* 
+        <View style={styles.recordCont}>
+          <View style={styles.recordContLighter}>
+            <View style={styles.recordContLight}>
+              <TouchableOpacity onPress={recording ? stopRecording : startRecording}>
+                {/* <Text>{ ? "Stop Recording" : "Start Recording"}</Text> */}
+                <Image source={recordStatus} style={styles.recorder} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.counterCont}>
+          <Text style={styles.counter}>{countMin}:{count < 10 ? `0${count}` : count}</Text>
+        </View>
+
+
+
+        {getRecordingLines()}
+
+        {/* 
 
 <Button title={isRecording ? 'Stop Recording' : 'Start Recording'} onPress={isRecording ? stopRecording : startRecording} />
       <Button title={isPlaying ? 'Stop Audio' : 'Play Audio'} onPress={isPlaying ? stopAudio : playAudio} disabled={!recording} /> */}
 
+        <View style={styles.displayJournals}>
+          <View >
+            {journals.map((jrn, index) => (
+              <View key={index} style={styles.card}>
+                <TouchableOpacity style={styles.cardBtn} >
+                  <Image source={playAud} style={styles.player} />
+                </TouchableOpacity>
+                <Text style={styles.cardTitle}>Title: {jrn.title} </Text>
 
+                <View style={styles.cardOpt}>
+                  { menuTitle !== jrn.title
+                    ? <TouchableOpacity onPress={(ev) => handleMenu(ev, jrn.title, "show")}>
+                      <Image source={audMenu} style={styles.audMenuOpt} />
+                    </TouchableOpacity>
+                    : null}
 
-      {/* <View style={{ marginTop: 50 }}>
+                  {menuStatus === true && menuTitle === jrn.title
+                    ? <View style={{ flexDirection: "row" }}>
+                      <TouchableOpacity onPress={(ev) => setToUpdate(ev, jrn)}>
+                        <Image source={audEdit} style={styles.audOpt} />
+                      </TouchableOpacity>
+
+                      <TouchableOpacity onPress={(ev) => deleteRoom(ev, jrn)}>
+                        <Image source={audDelete} style={styles.audOpt} />
+                      </TouchableOpacity></View>
+                    : null}
+
+                  {/* <TouchableOpacity onPress={(ev) => setToUpdate(ev, jrn)}>
+                  <Image source={audEdit} style={styles.audOpt} />
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={(ev) => deleteRoom(ev, jrn)}>
+                  <Image source={audDelete} style={styles.audOpt} />
+                </TouchableOpacity> */}
+                </View>
+
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* <View style={{ marginTop: 50 }}>
           {journals.map((jrn, index) => (
             <View key={index} style={{ marginTop: 20 }}>
               <Text>Title: {jrn.title}</Text>
@@ -379,7 +438,7 @@ export default function App() {
               </View>
 
             </View>
-          ))}
+      
         </View>
 
 
@@ -389,41 +448,169 @@ export default function App() {
             value={newJournalName} placeholder={`Current Title: ${updateJournal.title}`} />
           <TouchableOpacity onPress={journalToUpdate}>
             <Text>Save title</Text>
-            {/* <Image source={recordStatus} style={styles.recorder} /> /}
           </TouchableOpacity>
         </View> */}
-      {/* </ScrollView> */}
+      </ScrollView>
       <StatusBar style="auto" />
     </View>
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    // width: 300,
-    marginVertical: 50
+    width: "100%",
+    backgroundColor: "whitesmoke",
+    paddingVertical: 80,
+    alignItems: "center"
   },
+  titleInput: {
+    width: 350,
+    flex: 1,
+    justifyContent: "center",
+  },
+  formInput: {
+    padding: 10,
+    borderBottomColor: "black",
+    width: "100%",
+    textAlign: "center",
+    fontSize: 20,
+    backgroundColor: "#FAFAFA"
+  },
+  counterCont: {
+    marginTop: 50,
+    width: "100%",
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  counter: {
+    fontSize: 50,
+    fontWeight: "bold",
+    color: "#636363"
+  },
+
+  recordCont: {
+    marginTop: 80,
+    width: "100%",
+    height: 350,
+    backgroundColor: "#DCDCDC",
+    borderRadius: 350
+  },
+
+  recordContLighter: {
+    backgroundColor: "#B6B6B4",
+    height: "92%",
+    width: "92%",
+    marginVertical: "4%",
+    marginHorizontal: "4%",
+    borderRadius: 350
+  },
+  recordContLight: {
+    backgroundColor: "#808080",
+    height: "92%",
+    width: "92%",
+    marginVertical: "4%",
+    marginHorizontal: "4%",
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 350
+  },
+
+  recorder: {
+    width: 200,
+    height: 200,
+    objectFit: "cover",
+    // marginVertical: 30
+  },
+
   row: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    marginVertical: 40
   },
   fill: {
     flex: 1,
-    margin: 16
+    margin: 5,
+    fontSize: 16,
+    textAlign: "center"
   },
-  btn: {
-    margin: 16
+  fillD: {
+    flex: 1,
+    margin: 5,
+    fontSize: 16,
+    textAlign: "left",
+    paddingLeft: 30
   },
-  recorder: {
-    width: 100,
-    height: 100,
-    objectFit: "cover",
-    marginVertical: 30
+  btn1: {
+    margin: 5
+  },
+  btn2: {
+    margin: 5
+  },
+  stopAud: {
+    width: 40,
+    height: 40
+  },
+  playAud: {
+    width: 33,
+    height: 33
+  },
+  saveBTN: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 15,
+    backgroundColor: "#B6B6B4",
+    borderRadius: 100,
+  },
+  saveBTNTxt: {
+    fontSize: 18
+  },
+
+
+  displayJournals: {
+    marginTop: 100,
+    backgroundColor: "white"
+  },
+  card: {
+    margin: "3%",
+    width: "94%",
+    flexDirection: "row",
+    backgroundColor: "whitesmoke"
+  },
+  cardBtn: {
+    margin: 5
+  },
+  cardTitle: {
+    position: "absolute",
+    left: 80,
+    top: 15,
+    fontSize: 18
+  },
+  cardOpt: {
+    position: "absolute",
+    right: 10,
+    flexDirection: "row"
+  },
+  audMenuOpt: {
+    width: 30,
+    height: 30,
+    marginTop: 15
+  },
+  audOpt: {
+    width: 35,
+    height: 35,
+    marginTop: 15,
+    marginRight: 5
+  },
+
+  player: {
+    height: 50,
+    width: 50
   },
 });
 
