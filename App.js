@@ -24,11 +24,34 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 
 // import { Audio } from 'expo-av';
 
-import { XMLHttpRequest } from 'react-native';
+// import { XMLHttpRequest } from 'react-native';
 
 import * as FileSystem from 'expo-file-system';
 
 export default function App() {
+
+  //Store record
+  // const recordingSettings = {
+  //   android: {
+  //     extension: ".m4a",
+  //     outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
+  //     audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
+  //     sampleRate: 44100,
+  //     numberOfChannels: 2,
+  //     bitRate: 128000,
+  //   },
+  //   ios: {
+  //     extension: ".m4a",
+  //     outputFormat: Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_MPEG4AAC,
+  //     audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_MIN,
+  //     sampleRate: 44100,
+  //     numberOfChannels: 2,
+  //     bitRate: 128000,
+  //     linearPCMBitDepth: 16,
+  //     linearPCMIsBigEndian: false,
+  //     linearPCMIsFloat: false,
+  //   },
+  // };
 
   const [recording, setRecording] = useState();
   const [recordings, setRecordings] = useState([]);
@@ -159,40 +182,109 @@ export default function App() {
   }
 
   async function storeJournal() {
-    console.log("Tesing", recordingTitle);
-    console.log(recordings[0].sound);
+
+    // console.log("Tesing", recordingTitle);
+    // console.log(recordings[0].sound);
 
 
 
     try {
-      const audioTitle = recordingTitle;
-      const journal = `${recordings[0].title}${new Date().getTime()}`;
-      const path = `audio/${journal}`;
+    
       // const blob = await recordings[0].ogSound;
-      const convertRecord = recordings[0].sound;
-      console.log(convertRecord);
-      const storageRef = ref(storage, path);
-      uploadBytes(storageRef, convertRecord).then(() => {
-        // Get download URL
-        getDownloadURL(storageRef)
-          .then(async (url) => {
-            // Save data to Firestore           
-            await addDoc(collection(db, "journals"), {
-              title: audioTitle,
-              audioName: journal,
-              audioUrl: url
-            });
-          })
-          .catch((error) => {
-            console.error(error);
-          }).then(async () => {
-            setRecordings([]);
-            console.log("Success");
-          })
+      const recordUri = recordings[0].file;
+      // const convertRecord = recordings[0].sound;
+      // console.log(convertRecord);
+
+      //Store
+      const blob = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.onload = () => {
+          try {
+            resolve(xhr.response);
+          } catch (error) {
+            console.log("Line 205 error:", error);
+          }
+        };
+        xhr.onerror = (e) => {
+          console.log(e);
+          reject(new TypeError("Network request failed"));
+        };
+        xhr.responseType = "blob";
+        xhr.open("GET", recordUri, true);
+        xhr.send(null);
       });
+      if (blob != null) {
+        const uriParts = recordUri.split(".");
+        const fileType = uriParts[uriParts.length - 1];
+
+        const audioTitle = recordingTitle;
+        const journal = `${recordings[0].title}${new Date().getTime()}.${fileType}`;
+        const path = `audio/${journal}`;
+
+        const storageRef = ref(storage, path);
+        uploadBytes(storageRef, blob).then(() => {
+          // Get download URL
+          getDownloadURL(storageRef)
+            .then(async (url) => {
+              // Save data to Firestore           
+              await addDoc(collection(db, "journals"), {
+                title: audioTitle,
+                audioName: journal,
+                audioUrl: url
+              });
+            })
+            .catch((error) => {
+              console.error(error);
+            }).then(async () => {
+              setRecordings([]);
+              console.log("Success");
+            })
+        });
+
+
+
+        // firebase
+        //   .storage()
+        //   .ref()
+        //   .child(`nameOfTheFile.${fileType}`)
+        //   .put(blob, {
+        //     contentType: `audio/${fileType}`,
+        //   })
+        //   .then(() => {
+        //     console.log("Sent!");
+        //   })
+        //   .catch((e) => console.log("error:", e));
+
+      } else {
+        console.log("erroor with blob");
+      }
+      //End
+
+
+
+
+      // const storageRef = ref(storage, path);
+      // uploadBytes(storageRef, convertRecord).then(() => {
+      //   // Get download URL
+      //   getDownloadURL(storageRef)
+      //     .then(async (url) => {
+      //       // Save data to Firestore           
+      //       await addDoc(collection(db, "journals"), {
+      //         title: audioTitle,
+      //         audioName: journal,
+      //         audioUrl: url
+      //       });
+      //     })
+      //     .catch((error) => {
+      //       console.error(error);
+      //     }).then(async () => {
+      //       setRecordings([]);
+      //       console.log("Success");
+      //     })
+      // });
 
     } catch (error) {
-      console.log(error)
+      console.log("line 287",error)
     }
 
 
@@ -219,43 +311,43 @@ export default function App() {
   }
 
 
-  async function convertToMp3(sound) {
-    // // const fileInfo = await FileSystem.getInfoAsync(uri);
-    // // const lastFour = uri.substr(uri.length - 4);
-    // // const convertedUri = uri.replace(lastFour, '.mp3');
-    // // console.log(lastFour);
-    // // await FileSystem.copyAsync({
-    // //   from: uri,
-    // //   to: convertedUri,
-    // // });
-    // // console.log(convertedUri);
+  // async function convertToMp3(sound) {
+  //   // // const fileInfo = await FileSystem.getInfoAsync(uri);
+  //   // // const lastFour = uri.substr(uri.length - 4);
+  //   // // const convertedUri = uri.replace(lastFour, '.mp3');
+  //   // // console.log(lastFour);
+  //   // // await FileSystem.copyAsync({
+  //   // //   from: uri,
+  //   // //   to: convertedUri,
+  //   // // });
+  //   // // console.log(convertedUri);
 
-    // const localUri = await FileSystem.downloadAsync(uri, FileSystem.documentDirectory + 'audio.mp3');
+  //   // const localUri = await FileSystem.downloadAsync(uri, FileSystem.documentDirectory + 'audio.mp3');
 
-    // // Upload the file to Firebase Storage
-    // const response = await fetch(localUri);
-    // const blob = await response.blob();
-    // return blob;
-    // // return convertedUri;
+  //   // // Upload the file to Firebase Storage
+  //   // const response = await fetch(localUri);
+  //   // const blob = await response.blob();
+  //   // return blob;
+  //   // // return convertedUri;
 
-    try {
-      console.log(sound);
-      const exportOptions = {
-        outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4, // or Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_MP4
-        audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_MEDIUM // or Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC
-      };
+  //   try {
+  //     console.log(sound);
+  //     const exportOptions = {
+  //       outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4, // or Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_MP4
+  //       audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_MEDIUM // or Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC
+  //     };
 
-      const exportedFile = await sound.exportAsync(exportOptions);
-      const uri = exportedFile.uri;
-      console.log(uri);
+  //     const exportedFile = await sound.exportAsync(exportOptions);
+  //     const uri = exportedFile.uri;
+  //     console.log(uri);
 
-      return uri;
+  //     return uri;
 
-    } catch (error) {
-      console.log(error);
-    }
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
 
-  }
+  // }
 
   //Delete
   async function deleteRoom(event, data) {
@@ -392,7 +484,7 @@ export default function App() {
                 <Text style={styles.cardTitle}>Title: {jrn.title} </Text>
 
                 <View style={styles.cardOpt}>
-                  { menuTitle !== jrn.title
+                  {menuTitle !== jrn.title
                     ? <TouchableOpacity onPress={(ev) => handleMenu(ev, jrn.title, "show")}>
                       <Image source={audMenu} style={styles.audMenuOpt} />
                     </TouchableOpacity>
