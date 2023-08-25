@@ -29,30 +29,6 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import * as FileSystem from 'expo-file-system';
 
 export default function App() {
-
-  //Store record
-  // const recordingSettings = {
-  //   android: {
-  //     extension: ".m4a",
-  //     outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
-  //     audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
-  //     sampleRate: 44100,
-  //     numberOfChannels: 2,
-  //     bitRate: 128000,
-  //   },
-  //   ios: {
-  //     extension: ".m4a",
-  //     outputFormat: Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_MPEG4AAC,
-  //     audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_MIN,
-  //     sampleRate: 44100,
-  //     numberOfChannels: 2,
-  //     bitRate: 128000,
-  //     linearPCMBitDepth: 16,
-  //     linearPCMIsBigEndian: false,
-  //     linearPCMIsFloat: false,
-  //   },
-  // };
-
   const [recording, setRecording] = useState();
   const [recordings, setRecordings] = useState([]);
   const [message, setMessage] = useState("");
@@ -71,8 +47,7 @@ export default function App() {
 
     let documents = [];
     const collectionRef = collection(db, 'journals');
-    onSnapshot(collectionRef, (snapshot) => {
-
+    onSnapshot(collectionRef, (snapshot) => { 
       const fetchedDocuments = [];
       snapshot.forEach((doc) => {
         fetchedDocuments.push({ id: doc.id, ...doc.data() });
@@ -102,9 +77,31 @@ export default function App() {
           playInSilentModeIOS: true
         });
 
-        const { recording } = await Audio.Recording.createAsync(
-          Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
+        const recording = new Audio.Recording(
+          // Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
         );
+        await recording.prepareToRecordAsync({
+          android: {
+            extension: ".m4a",
+            outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4,
+            audioEncoder: Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC,
+            sampleRate: 44100,
+            numberOfChannels: 2,
+            bitRate: 128000,
+          },
+          ios: {
+            extension: ".m4a",
+            outputFormat: Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_MPEG4AAC,
+            audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_MIN,
+            sampleRate: 44100,
+            numberOfChannels: 2,
+            bitRate: 128000,
+            linearPCMBitDepth: 16,
+            linearPCMIsBigEndian: false,
+            linearPCMIsFloat: false,
+          },
+        })
+        await recording.startAsync();
         setRecording(recording);
 
         let minCount = 0;
@@ -183,17 +180,9 @@ export default function App() {
 
   async function storeJournal() {
 
-    // console.log("Tesing", recordingTitle);
-    // console.log(recordings[0].sound);
-
-
-
     try {
-    
-      // const blob = await recordings[0].ogSound;
+
       const recordUri = recordings[0].file;
-      // const convertRecord = recordings[0].sound;
-      // console.log(convertRecord);
 
       //Store
       const blob = await new Promise((resolve, reject) => {
@@ -240,114 +229,16 @@ export default function App() {
               console.log("Success");
             })
         });
-
-
-
-        // firebase
-        //   .storage()
-        //   .ref()
-        //   .child(`nameOfTheFile.${fileType}`)
-        //   .put(blob, {
-        //     contentType: `audio/${fileType}`,
-        //   })
-        //   .then(() => {
-        //     console.log("Sent!");
-        //   })
-        //   .catch((e) => console.log("error:", e));
-
       } else {
         console.log("erroor with blob");
       }
       //End
 
-
-
-
-      // const storageRef = ref(storage, path);
-      // uploadBytes(storageRef, convertRecord).then(() => {
-      //   // Get download URL
-      //   getDownloadURL(storageRef)
-      //     .then(async (url) => {
-      //       // Save data to Firestore           
-      //       await addDoc(collection(db, "journals"), {
-      //         title: audioTitle,
-      //         audioName: journal,
-      //         audioUrl: url
-      //       });
-      //     })
-      //     .catch((error) => {
-      //       console.error(error);
-      //     }).then(async () => {
-      //       setRecordings([]);
-      //       console.log("Success");
-      //     })
-      // });
-
     } catch (error) {
-      console.log("line 287",error)
+      console.log("line 287", error)
     }
-
-
-
-
-    // console.log("journal",journal);
-    // console.log(recordings);
-
-
-    // Upload the audio file to Firebase Storage
-    // const blob = await recordings[0].sound;
-    // // const ref = firebase.storage().ref().child('audio/' + new Date().toISOString() + '.m4a');
-    // const ref ="";
-    // await ref.put(blob);
-
-    // // Generate a download URL for the uploaded file
-    // const downloadUrl = await ref.getDownloadURL();
-
-    // // Store the download URL in Firestore
-    // // const db = firebase.firestore();
-    // const docRef = db.collection('recordings').doc();
-    // await docRef.set({ downloadUrl });
     setRecordings([])
   }
-
-
-  // async function convertToMp3(sound) {
-  //   // // const fileInfo = await FileSystem.getInfoAsync(uri);
-  //   // // const lastFour = uri.substr(uri.length - 4);
-  //   // // const convertedUri = uri.replace(lastFour, '.mp3');
-  //   // // console.log(lastFour);
-  //   // // await FileSystem.copyAsync({
-  //   // //   from: uri,
-  //   // //   to: convertedUri,
-  //   // // });
-  //   // // console.log(convertedUri);
-
-  //   // const localUri = await FileSystem.downloadAsync(uri, FileSystem.documentDirectory + 'audio.mp3');
-
-  //   // // Upload the file to Firebase Storage
-  //   // const response = await fetch(localUri);
-  //   // const blob = await response.blob();
-  //   // return blob;
-  //   // // return convertedUri;
-
-  //   try {
-  //     console.log(sound);
-  //     const exportOptions = {
-  //       outputFormat: Audio.RECORDING_OPTION_ANDROID_OUTPUT_FORMAT_MPEG_4, // or Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_MP4
-  //       audioQuality: Audio.RECORDING_OPTION_IOS_AUDIO_QUALITY_MEDIUM // or Audio.RECORDING_OPTION_ANDROID_AUDIO_ENCODER_AAC
-  //     };
-
-  //     const exportedFile = await sound.exportAsync(exportOptions);
-  //     const uri = exportedFile.uri;
-  //     console.log(uri);
-
-  //     return uri;
-
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-
-  // }
 
   //Delete
   async function deleteRoom(event, data) {
@@ -382,9 +273,10 @@ export default function App() {
   //update
   const [updateJournal, setUpdateJournal] = useState([]);
   const [newJournalName, setNewJournalName] = useState("");
-
+  const [updateStatus, setupdateStatus] = useState(false);
   function setToUpdate(event, data) {
     setUpdateJournal(data);
+    setupdateStatus(true);
   }
 
   async function journalToUpdate() {
@@ -404,9 +296,22 @@ export default function App() {
       console.log('Updated');
       setMenuStatus(false);
       setMenuTitle("Title");
+      setupdateStatus(false);
     } catch (error) {
       console.log('Failed to Update');
     }
+  }
+
+  //Play sound
+  async function playAudio(event, audUri) {
+
+    try {
+      const { sound } = await Audio.Sound.createAsync({ uri: audUri });
+      await sound.playAsync();
+    } catch (error) {
+      console.log("error:", error);
+    }
+
   }
 
 
@@ -443,10 +348,7 @@ export default function App() {
             onChangeText={text => setRecordingTitle(text)}
             value={recordingTitle} placeholder="Add Journal Title:" />
         </View>
-        {/* <TouchableOpacity onPress={displayTitle}>
-        <Text>Save title</Text>
-        {/* <Image source={recordStatus} style={styles.recorder} /> /}
-      </TouchableOpacity> */}
+
         <Text>{message}</Text>
 
 
@@ -454,7 +356,6 @@ export default function App() {
           <View style={styles.recordContLighter}>
             <View style={styles.recordContLight}>
               <TouchableOpacity onPress={recording ? stopRecording : startRecording}>
-                {/* <Text>{ ? "Stop Recording" : "Start Recording"}</Text> */}
                 <Image source={recordStatus} style={styles.recorder} />
               </TouchableOpacity>
             </View>
@@ -469,16 +370,12 @@ export default function App() {
 
         {getRecordingLines()}
 
-        {/* 
-
-<Button title={isRecording ? 'Stop Recording' : 'Start Recording'} onPress={isRecording ? stopRecording : startRecording} />
-      <Button title={isPlaying ? 'Stop Audio' : 'Play Audio'} onPress={isPlaying ? stopAudio : playAudio} disabled={!recording} /> */}
 
         <View style={styles.displayJournals}>
           <View >
             {journals.map((jrn, index) => (
               <View key={index} style={styles.card}>
-                <TouchableOpacity style={styles.cardBtn} >
+                <TouchableOpacity style={styles.cardBtn} onPress={(ev) => playAudio(ev, jrn.audioUrl)}>
                   <Image source={playAud} style={styles.player} />
                 </TouchableOpacity>
                 <Text style={styles.cardTitle}>Title: {jrn.title} </Text>
@@ -501,13 +398,6 @@ export default function App() {
                       </TouchableOpacity></View>
                     : null}
 
-                  {/* <TouchableOpacity onPress={(ev) => setToUpdate(ev, jrn)}>
-                  <Image source={audEdit} style={styles.audOpt} />
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={(ev) => deleteRoom(ev, jrn)}>
-                  <Image source={audDelete} style={styles.audOpt} />
-                </TouchableOpacity> */}
                 </View>
 
               </View>
@@ -515,33 +405,18 @@ export default function App() {
           </View>
         </View>
 
-        {/* <View style={{ marginTop: 50 }}>
-          {journals.map((jrn, index) => (
-            <View key={index} style={{ marginTop: 20 }}>
-              <Text>Title: {jrn.title}</Text>
+        {updateStatus  ?
+          <View style={{ marginTop: 50 }}>
+            <TextInput style={styles.formInput}
+              onChangeText={text => setNewJournalName(text)}
+              value={newJournalName} placeholder={`Current Title: ${updateJournal.title}`} />
 
-              <View>
-                <TouchableOpacity onPress={(ev) => setToUpdate(ev, jrn)}>
-                  <Text>Update</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={(ev) => deleteRoom(ev, jrn)}>
-                  <Text>Delete</Text>
-                </TouchableOpacity>
-              </View>
+            <TouchableOpacity onPress={journalToUpdate} style={styles.saveBTN}>
+              <Text style={styles.saveBTNTxt}>Save Update</Text>
+            </TouchableOpacity>
+          </View>
+          : null}
 
-            </View>
-      
-        </View>
-
-
-        <View style={{ marginTop: 50 }}>
-          <TextInput style={styles.formInput}
-            onChangeText={text => setNewJournalName(text)}
-            value={newJournalName} placeholder={`Current Title: ${updateJournal.title}`} />
-          <TouchableOpacity onPress={journalToUpdate}>
-            <Text>Save title</Text>
-          </TouchableOpacity>
-        </View> */}
       </ScrollView>
       <StatusBar style="auto" />
     </View>
@@ -658,6 +533,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     backgroundColor: "#B6B6B4",
     borderRadius: 100,
+    marginVertical: 20
   },
   saveBTNTxt: {
     fontSize: 18
