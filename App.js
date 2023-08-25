@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 // import React from 'react';
 import { StyleSheet, Text, View, Button, TouchableOpacity, TextInput, Image, ScrollView } from 'react-native';
-import { Audio, RecordingOptionsPresets } from "expo-av";
+import { Audio } from "expo-av";
 // import { AudioRecorderPlayer, AudioPlayer } from 'react-native-audio-recorder-player';
 import React, { useState, useEffect, useRef } from 'react';
 
