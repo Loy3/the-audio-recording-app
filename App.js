@@ -32,6 +32,8 @@ export default function App() {
   const [countMin, setCountMin] = useState(0);
   const intervalRef = useRef(null);
 
+  const [bgColor, setbgColor] = useState("whitesmoke");
+
   const [recordStatus, setRecordStatus] = useState(recordOff);
 
   //Get data 
@@ -69,6 +71,8 @@ export default function App() {
           allowRecordingIOS: true,
           playInSilentModeIOS: true
         });
+
+        setbgColor("#B6B6B4");
 
         const recording = new Audio.Recording(
           // Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY
@@ -118,6 +122,7 @@ export default function App() {
   }
 
   async function stopRecording() {
+    setbgColor("whitesmoke");
     setRecording(undefined);
     await recording.stopAndUnloadAsync();
 
@@ -266,9 +271,7 @@ export default function App() {
   }
 
   async function journalToUpdate() {
-    console.log(newJournalName);
-    const docId = updateJournal.id;
-
+    
     const updateData = {
       title: newJournalName,
       audioName: updateJournal.audioName,
@@ -326,7 +329,7 @@ export default function App() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, {backgroundColor: bgColor}]}>
       <ScrollView scrollEnabled={true} >
 
         <View style={styles.titleInput}>
