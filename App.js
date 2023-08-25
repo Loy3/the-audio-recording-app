@@ -4,8 +4,7 @@ import { StyleSheet, Text, View, Button, TouchableOpacity, TextInput, Image, Scr
 import { Audio, RecordingOptionsPresets } from "expo-av";
 // import { AudioRecorderPlayer, AudioPlayer } from 'react-native-audio-recorder-player';
 import React, { useState, useEffect, useRef } from 'react';
-// import * as Updates from 'expo-updates';
-import { Updates } from 'expo-updates';
+
 
 import recordOn from "./assets/recorder.png";
 import recordOff from "./assets/recorderOff.png";
@@ -17,16 +16,10 @@ import audMenu from "./assets/dots.png";
 import audEdit from "./assets/edit.png";
 import audDelete from "./assets/delete.png";
 
-import firebase from 'firebase/app';
 import { storage, db } from './components/fbConfig';
 import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
-// import { Audio } from 'expo-av';
-
-// import { XMLHttpRequest } from 'react-native';
-
-import * as FileSystem from 'expo-file-system';
 
 export default function App() {
   const [recording, setRecording] = useState();
@@ -169,13 +162,6 @@ export default function App() {
         break;
       default:
     }
-  }
-
-
-
-
-  function displayTitle() {
-    console.log(recordingTitle);
   }
 
   async function storeJournal() {
@@ -581,67 +567,3 @@ const styles = StyleSheet.create({
     width: 50
   },
 });
-
-/*
-import React, { useState } from 'react';
-import { Button } from 'react-native';
-import { AudioRecorderPlayer, AudioPlayer } from 'react-native-audio-recorder-player';
-
-const audioRecorderPlayer = new AudioRecorderPlayer();
-const audioPlayer = new AudioPlayer();
-
-export default function App() {
-  const [isRecording, setIsRecording] = useState(false);
-
-  const startRecording = async () => {
-    const result = await audioRecorderPlayer.startRecorder('myRecording.mp3');
-    setIsRecording(true);
-    console.log(result);
-  };
-
-  const stopRecording = async () => {
-    const result = await audioRecorderPlayer.stopRecorder();
-    setIsRecording(false);
-    console.log(result);
-  };
-
-  const playAudio = async () => {
-    const result = await audioPlayer.startPlayer('myRecording.mp3');
-    console.log(result);
-  };
-
-  const stopAudio = async () => {
-    const result = await audioPlayer.stopPlayer();
-    console.log(result);
-  };
-
-  return (
-    <>
-      <Button title={isRecording ? 'Stop Recording' : 'Start Recording'} onPress={isRecording ? stopRecording : startRecording} />
-      <Button title="Play Audio" onPress={playAudio} />
-      <Button title="Stop Audio" onPress={stopAudio} />
-    </>
-  );
-}*/
-
-/*
-import { Audio } from 'expo-av';
-import * as firebase from 'firebase';
-
-// Record audio using Expo Audio
-const recording = new Audio.Recording();
-await recording.prepareToRecordAsync(Audio.RECORDING_OPTIONS_PRESET_HIGH_QUALITY);
-await recording.startAsync();
-
-// Upload the audio file to Firebase Storage
-const blob = await recording.stopAndUnloadAsync();
-const ref = firebase.storage().ref().child('audio/' + new Date().toISOString() + '.m4a');
-await ref.put(blob);
-
-// Generate a download URL for the uploaded file
-const downloadUrl = await ref.getDownloadURL();
-
-// Store the download URL in Firestore
-const db = firebase.firestore();
-const docRef = db.collection('recordings').doc();
-await docRef.set({ downloadUrl });*/
